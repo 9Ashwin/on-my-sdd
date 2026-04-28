@@ -5,8 +5,8 @@ Claude Code Skills repository for spec-driven development — OpenSpec + Superpo
 ## Installation
 
 ```bash
-npx skills add https://github.com/ashwinyue/oh-my-spec.git --skill sdd-workflow
-npx skills add https://github.com/ashwinyue/oh-my-spec.git --skill sdd-review-specs
+npx skills add https://github.com/9Ashwin/oh-my-spec.git --skill sdd-workflow
+npx skills add https://github.com/9Ashwin/oh-my-spec.git --skill sdd-review-specs
 ```
 
 ## Available Skills
