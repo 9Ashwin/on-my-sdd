@@ -4,10 +4,22 @@ OpenSpec + Superpowers all-in-one Claude Code Skills — the complete SDD toolch
 
 ## Installation
 
+### Claude Code
+
 ```bash
 npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-workflow
 npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-review-specs
 ```
+
+### Codex
+
+```bash
+git clone https://github.com/9Ashwin/on-my-sdd.git ~/.codex/on-my-sdd
+mkdir -p ~/.agents/skills
+ln -s ~/.codex/on-my-sdd/skills ~/.agents/skills/on-my-sdd
+```
+
+详见 [Codex 安装指南](.codex/INSTALL.md)
 
 ## Available Skills
 
