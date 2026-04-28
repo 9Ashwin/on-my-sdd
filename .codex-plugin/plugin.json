@@ -1,7 +1,7 @@
 {
   "name": "on-my-sdd",
   "version": "1.0.0",
-  "description": "OpenSpec + Superpowers all-in-one — 规约驱动开发完整工具链，包含 SDD 流程路由和规约审核 gate",
+  "description": "OpenSpec and Superpowers all-in-one — 规约驱动开发完整工具链，包含 SDD 流程路由和规约审核 gate",
   "author": {
     "name": "Mervyn",
     "url": "https://github.com/9Ashwin"
@@ -21,7 +21,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "On My SDD",
-    "shortDescription": "OpenSpec + Superpowers SDD 流程工具链 — 规约先行，审核把关",
+    "shortDescription": "OpenSpec and Superpowers SDD 流程工具链 — 规约先行，审核把关",
     "longDescription": "On My SDD 提供两个核心 skill：sdd-workflow（分类请求、检测阶段、路由到正确的规约或执行工具）和 sdd-review-specs（结构化审核 AI 生成的 proposal/specs/design/tasks 四大件）。在写第一行代码之前，确保人和 AI 对“要做什么”达成了精确共识。",
     "developerName": "Mervyn",
     "category": "Coding",

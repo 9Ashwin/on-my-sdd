@@ -1,6 +1,6 @@
 # On My SDD
 
-OpenSpec + Superpowers all-in-one Claude Code Skills — the complete SDD toolchain in one package.
+OpenSpec and Superpowers all-in-one skills — the complete SDD toolchain in one package.
 
 ## Installation
 
