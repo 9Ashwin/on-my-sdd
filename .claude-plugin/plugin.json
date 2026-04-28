@@ -1,0 +1,21 @@
+{
+  "name": "on-my-sdd",
+  "description": "OpenSpec and Superpowers SDD toolchain — classify, propose, review, and execute with spec-driven development",
+  "version": "1.0.0",
+  "author": {
+    "name": "Mervyn",
+    "url": "https://github.com/9Ashwin"
+  },
+  "homepage": "https://github.com/9Ashwin/on-my-sdd",
+  "repository": "https://github.com/9Ashwin/on-my-sdd",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven-development",
+    "openspec",
+    "superpowers",
+    "sdd",
+    "spec-review",
+    "workflow",
+    "tdd"
+  ]
+}

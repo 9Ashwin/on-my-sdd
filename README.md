@@ -11,6 +11,11 @@ npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-workflow
 npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-review-specs
 ```
 
+Or install the full plugin:
+```bash
+/plugin install https://github.com/9Ashwin/on-my-sdd.git
+```
+
 ### Codex
 
 ```bash
