@@ -1,12 +1,12 @@
-# Oh My Spec
+# On My SDD
 
-Claude Code Skills repository for spec-driven development — OpenSpec + Superpowers workflow tools.
+OpenSpec + Superpowers all-in-one Claude Code Skills — the complete SDD toolchain in one package.
 
 ## Installation
 
 ```bash
-npx skills add https://github.com/9Ashwin/oh-my-spec.git --skill sdd-workflow
-npx skills add https://github.com/9Ashwin/oh-my-spec.git --skill sdd-review-specs
+npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-workflow
+npx skills add https://github.com/9Ashwin/on-my-sdd.git --skill sdd-review-specs
 ```
 
 ## Available Skills
