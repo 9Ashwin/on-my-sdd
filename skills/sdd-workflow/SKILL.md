@@ -114,20 +114,17 @@ openspec/changes/<name>/
 
 `docs/superpowers/specs/` and `docs/superpowers/plans/` are legacy brainstorming output paths — they are NOT used by this workflow. All artifacts live under `openspec/changes/<name>/`.
 
-## OpenSpec Command Reference
+## OpenSpec Commands Used
 
-| Command | Description | When to use |
-|---------|-------------|-------------|
-| `/opsx:propose` | Generate complete change artifacts in one step | Requirements are clear |
-| `/opsx:explore` | Investigate without creating files | Fuzzy requirements, tech evaluation, approach comparison |
-| `/opsx:apply` | Implement tasks from tasks.md item by item | Implementation phase |
-| `/opsx:archive` | Archive and merge specs | Feature complete |
-| `/opsx:new` | Create change skeleton only | Want fine-grained control over artifact creation |
-| `/opsx:continue` | Generate the next artifact | Step-by-step review, confirm each artifact |
-| `/opsx:ff` | Fast-forward: generate all remaining artifacts | Direction confirmed, accelerate |
-| `/opsx:verify` | 3-dimension validation of implementation | Pre-archive quality check |
-| `/opsx:sync` | Sync specs without archiving | Parallel changes need reference |
-| `/opsx:bulk-archive` | Batch archive multiple changes | Multi-feature unified wrap-up |
+These 5 commands drive the SDD pipeline. The other opsx commands (`new`, `continue`, `ff`, `sync`, `bulk-archive`, `onboard`) are available but outside this skill's scope.
+
+| Command | Used in Tier | Purpose |
+|---------|-------------|---------|
+| `/opsx:propose` | Lite, Standard, Full | Generate 4 artifacts in one step |
+| `/opsx:explore` | Fuzzy → Full | Read code, build context before brainstorming |
+| `/opsx:apply` | Lite, Standard, Full | Implement tasks from tasks.md |
+| `/opsx:verify` | Standard, Full | 3-dimension validation before archive |
+| `/opsx:archive` | Lite, Standard, Full | Delta merge + move to archive/ |
 
 ## Request Classification
 
