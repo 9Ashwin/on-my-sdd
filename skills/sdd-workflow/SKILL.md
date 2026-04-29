@@ -8,12 +8,17 @@ If you were dispatched as a subagent to execute a specific task, skip this skill
 </SUBAGENT-STOP>
 
 <CRITICAL-OVERRIDE>
-The brainstorming skill says its terminal state is `writing-plans`. This is OVERRIDDEN when brainstorming is invoked through sdd-workflow.
+**Two superpowers skills have defaults that conflict with sdd-workflow. Both are OVERRIDDEN:**
 
-**After brainstorming completes and the user approves the design:**
-- DO invoke `/opsx:propose "<name>"` — NOT `writing-plans`
-- The sdd-workflow pipeline is: `brainstorming → /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply → archive`
-- `writing-plans` happens at Step 5, not after brainstorming. If you invoke `writing-plans` immediately after brainstorming, you skip Steps 2-4 (the entire OpenSpec specification phase).
+1. **Brainstorming** says its terminal state is `writing-plans`.
+   - OVERRIDDEN: After brainstorming → invoke `/opsx:propose "<name>"`, NOT `writing-plans`.
+   - The pipeline is: `brainstorming → /opsx:propose → review → /opsx:verify → writing-plans`.
+
+2. **Writing-plans** says its output path is `docs/superpowers/plans/YYYY-MM-DD-<name>.md`.
+   - OVERRIDDEN: Output MUST go to `openspec/changes/<name>/plan.md`.
+   - `docs/superpowers/plans/` is a legacy path — do NOT use it.
+
+If you invoke `writing-plans` immediately after brainstorming, you skip Steps 2-4 (the entire OpenSpec specification phase). If you write `plan.md` to `docs/superpowers/plans/`, it lives outside the OpenSpec traceability system.
 </CRITICAL-OVERRIDE>
 
 <EXTREMELY-IMPORTANT>
