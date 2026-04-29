@@ -7,6 +7,15 @@ description: Use when starting any development task beyond single-line fixes —
 If you were dispatched as a subagent to execute a specific task, skip this skill.
 </SUBAGENT-STOP>
 
+<CRITICAL-OVERRIDE>
+The brainstorming skill says its terminal state is `writing-plans`. This is OVERRIDDEN when brainstorming is invoked through sdd-workflow.
+
+**After brainstorming completes and the user approves the design:**
+- DO invoke `/opsx:propose "<name>"` — NOT `writing-plans`
+- The sdd-workflow pipeline is: `brainstorming → /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply → archive`
+- `writing-plans` happens at Step 5, not after brainstorming. If you invoke `writing-plans` immediately after brainstorming, you skip Steps 2-4 (the entire OpenSpec specification phase).
+</CRITICAL-OVERRIDE>
+
 <EXTREMELY-IMPORTANT>
 Spec-driven development means specs live in the file system, not in chat history. OpenSpec manages specification artifacts. Superpowers enforces execution discipline. This skill routes between them.
 
@@ -34,49 +43,72 @@ If the user says "skip the spec, just write code," follow the user's instruction
 
 ## The 10-Step Pipeline
 
-OpenSpec provides the specification skeleton (What). Superpowers enforces execution discipline (How). They connect in sequence with no overlap:
+OpenSpec provides the specification skeleton (what). Superpowers enforces execution discipline (how). They connect in sequence with no overlap:
 
 ```
-0. [Optional] superpowers:brainstorming  — 探索性规划。输出: design doc → 作为 Step 2 的输入。
-                                           ⛔ 完成后去 Step 2，禁止直接去 writing-plans。
+0. [Optional] superpowers:brainstorming  — Exploratory design for greenfield/fuzzy requirements.
+                                           Output: design doc → feeds into Step 2.
+                                           ⛔ After approval → go to Step 2, NOT writing-plans.
 
 1. [User request]
      ↓
-2. /opsx:propose <name>            — OpenSpec: 创建提案。一步生成四大件。
+2. /opsx:propose <name>            — OpenSpec: Create proposal. Generate all 4 artifacts.
      ↓                               proposal.md + specs/ + design.md + tasks.md
-3. [Manual review + iterate]       — OpenSpec: 细化规范。逐项审核、修正四大件。
-     ↓                               可选 /opsx:continue 逐步生成、/opsx:ff 快进。
-4. /opsx:verify                    — OpenSpec: 验证规范。三维验证（完整/正确/一致）。
+3. [Manual review + iterate]       — OpenSpec: Refine specs. Review and revise each artifact.
+     ↓                               Optional: /opsx:continue (step-by-step), /opsx:ff (fast-forward).
+4. /opsx:verify                    — OpenSpec: Verify specs. 3-dimension validation gate.
      ↓
-5. superpowers:writing-plans       — Superpowers: 生成开发计划。
-     ↓                               输出: openspec/changes/<name>/plan.md
-6. /opsx:apply +                   — Superpowers: TDD开发。apply = 调度器，TDD = 执行器。
-   @test-driven-development          RED → GREEN → REFACTOR 逐任务循环。
+5. superpowers:writing-plans       — Superpowers: Generate implementation plan.
+     ↓                               Output: openspec/changes/<name>/plan.md
+6. /opsx:apply +                   — Superpowers: TDD execution. apply = scheduler, TDD = executor.
+   @test-driven-development          RED → GREEN → REFACTOR per task.
      ↓
-7. @requesting-code-review         — Superpowers: 代码审查。
+7. @requesting-code-review         — Superpowers: Code review.
      ↓
-8. @verification-before-           — Superpowers: 完成前验证。新鲜测试证据。
+8. @verification-before-           — Superpowers: Pre-completion verification. Fresh test evidence.
    completion
      ↓
-9. /opsx:archive <name>            — OpenSpec: 归档变更。Delta 合并 + 移到 archive/。
+9. /opsx:archive <name>            — OpenSpec: Archive change. Delta merge + move to archive/.
      ↓
-10. [Delivered]                    — 交付上线
+10. [Delivered]                    — Ship it.
 ```
+
+## Artifact Ownership
+
+OpenSpec and Superpowers each produce plan-like files — they serve different roles and both belong in `openspec/changes/<name>/`:
+
+| Artifact | Owner | Granularity | Purpose | Example |
+|----------|-------|-------------|---------|---------|
+| `tasks.md` | OpenSpec (`/opsx:propose`) | Coarse checkbox items | WHAT to implement | `- [ ] Implement Store interface` |
+| `plan.md` | Superpowers (`writing-plans`) | 2-5min subtasks | HOW to implement | `1. Define Store interface in store/store.go (2 min)` |
+
+**Rule:** `plan.md` refines `tasks.md` — it does NOT replace it. Both coexist in the same change directory. `writing-plans` reads `tasks.md` as input and outputs `plan.md` with detailed steps, file paths, and test names.
+
+```
+openspec/changes/<name>/
+├── proposal.md    ← OpenSpec: why + scope boundary
+├── specs/         ← OpenSpec: behavior delta specs
+├── design.md      ← OpenSpec: technical decisions
+├── tasks.md       ← OpenSpec: coarse implementation checklist (WHAT)
+└── plan.md        ← Superpowers: refined subtasks (HOW)
+```
+
+`docs/superpowers/specs/` and `docs/superpowers/plans/` are legacy brainstorming output paths — they are NOT used by this workflow. All artifacts live under `openspec/changes/<name>/`.
 
 ## OpenSpec Command Reference
 
-| 命令 | 说明 | 使用场景 |
-|------|------|---------|
-| `/opsx:propose` | 一步生成完整变更工件 | 需求清晰，直接开干 |
-| `/opsx:explore` | 探索调研，不产生文件 | 需求模糊、技术选型、方案对比 |
-| `/opsx:apply` | 按 tasks.md 逐条写代码 | 实现阶段 |
-| `/opsx:archive` | 归档，合并规格 | 功能完成收尾 |
-| `/opsx:new` | 只创建变更骨架 | 想手动控制节奏 |
-| `/opsx:continue` | 生成下一个工件 | 逐步审查，每步确认 |
-| `/opsx:ff` | 快进生成所有剩余工件 | 确认方向后加速 |
-| `/opsx:verify` | 三维度验证实现 | 归档前质量检查 |
-| `/opsx:sync` | 只同步规格不归档 | 并行变更需引用 |
-| `/opsx:bulk-archive` | 批量归档 | 多功能统一收尾 |
+| Command | Description | When to use |
+|---------|-------------|-------------|
+| `/opsx:propose` | Generate complete change artifacts in one step | Requirements are clear |
+| `/opsx:explore` | Investigate without creating files | Fuzzy requirements, tech evaluation, approach comparison |
+| `/opsx:apply` | Implement tasks from tasks.md item by item | Implementation phase |
+| `/opsx:archive` | Archive and merge specs | Feature complete |
+| `/opsx:new` | Create change skeleton only | Want fine-grained control over artifact creation |
+| `/opsx:continue` | Generate the next artifact | Step-by-step review, confirm each artifact |
+| `/opsx:ff` | Fast-forward: generate all remaining artifacts | Direction confirmed, accelerate |
+| `/opsx:verify` | 3-dimension validation of implementation | Pre-archive quality check |
+| `/opsx:sync` | Sync specs without archiving | Parallel changes need reference |
+| `/opsx:bulk-archive` | Batch archive multiple changes | Multi-feature unified wrap-up |
 
 ## Request Classification
 
@@ -122,7 +154,7 @@ Check the file system to determine where you are in the workflow:
 |------------|-------|-------------|
 | No `openspec/` directory | Uninitialized | Run `openspec init` first |
 | `openspec/` exists, no change dir | Ready for proposal | Route to Step 2: `/opsx:propose <name>` or Step 0: exploration |
-| `openspec/changes/<name>/` with 4 artifacts, unreviewed | Specs need review | Step 3-4: Manual review → `/opsx:verify` |
+| `openspec/changes/<name>/` with 4 artifacts, unreviewed | Specs need review | Steps 3-4: Manual review → `/opsx:verify` |
 | `openspec/changes/<name>/` with reviewed artifacts | Ready for execution | Step 5: `superpowers:writing-plans` |
 | `tasks.md` has unchecked items | In progress | Step 6: `/opsx:apply` + `@test-driven-development` |
 | All tasks checked, not archived | Ready for delivery | Steps 7-8: review → verify → Step 9: `/opsx:archive` |
@@ -133,9 +165,11 @@ Check the file system to determine where you are in the workflow:
 
 Brainstorming (Step 0) is optional. When requirements are already clear, skip to Step 2.
 
-**When brainstorming completes and the user approves the design:**
+**The brainstorming skill says its terminal state is `writing-plans`. THIS IS OVERRIDDEN.** When brainstorming is invoked through sdd-workflow, the pipeline is: brainstorming → /opsx:propose → review → /opsx:verify → writing-plans.
 
-1. **DO NOT** invoke `writing-plans` — this bypasses OpenSpec
+When brainstorming completes and the user approves the design:
+
+1. **DO NOT** invoke `writing-plans` — this bypasses OpenSpec Steps 2-4
 2. **DO NOT** write code — the spec isn't locked yet
 3. **DO** invoke `/opsx:propose "<name>"` — feed the approved brainstorming design as context
 4. **DO** verify `openspec/changes/<name>/` contains: proposal.md, specs/, design.md, tasks.md
@@ -143,36 +177,38 @@ Brainstorming (Step 0) is optional. When requirements are already clear, skip to
 
 **Why:** Brainstorming produces an exploratory design (Phase 1 — Superpowers). OpenSpec locks it into auditable, mergeable artifacts (Phase 2 — OpenSpec). `docs/superpowers/specs/` is transient; `openspec/changes/<name>/` is permanent and traceable. Skipping Step 2 means specs can't be verified, archived, or traced.
 
-### Step 2-10: Linear Execution
+### Steps 2-10: Linear Execution
 
 ```
-Step 2: /opsx:propose <name>     → 已做 Step 0 则传入其输出。确认产物后进入 Step 3。
+Step 2: /opsx:propose <name>     → If Step 0 was done, feed its output as context.
+                                    Confirm artifacts before Step 3.
 
-Step 3: Manual review + iterate   → 逐项审核提案/规格/设计/任务。
-                                     可选: /opsx:continue 逐步 | /opsx:ff 快进。
-                                     标准: 每个 in-scope 项有对应任务 checkbox。
+Step 3: Manual review + iterate   → Review proposal/specs/design/tasks item by item.
+                                    Optional: /opsx:continue (step) | /opsx:ff (fast-forward).
+                                    Standard: every in-scope item has a task checkbox.
 
-Step 4: /opsx:verify              → 三维验证（完整/正确/一致）。通过后进入执行阶段。
+Step 4: /opsx:verify              → 3-dimension validation (complete/correct/consistent).
+                                    Pass before entering execution phase.
 
 Step 5: superpowers:writing-plans → MUST save to openspec/changes/<name>/plan.md
-                                     (禁止写入 docs/superpowers/plans/)。
-                                     产出 2-5 分钟粒度的子任务。
+                                    (NOT docs/superpowers/plans/).
+                                    Output: 2-5 minute granular subtasks.
 
-Step 6: /opsx:apply +             → apply = 调度器, TDD = 执行器。
-  @test-driven-development          RED → GREEN → REFACTOR 每任务循环。
-                                     出错: @systematic-debugging → 返回 apply。
-                                     全部完成 → Step 7。
+Step 6: /opsx:apply +             → apply = scheduler, TDD = executor.
+  @test-driven-development          RED → GREEN → REFACTOR per task.
+                                    On error: @systematic-debugging → return to apply.
+                                    All tasks complete → Step 7.
 
-Step 7: @requesting-code-review   → 派遣 code-reviewer。修复 Critical/Important 问题。
+Step 7: @requesting-code-review   → Dispatch code-reviewer. Fix Critical/Important issues.
 
-Step 8: @verification-before-     → 新鲜 go test ./... / pytest / etc。
-  completion                        声称完成前必须有新的验证证据。
+Step 8: @verification-before-     → Fresh go test ./... / pytest / etc.
+  completion                        Evidence required BEFORE claiming completion.
 
-Step 9: /opsx:archive <name>      → Delta 合并到 openspec/specs/。
-                                     Change 移到 openspec/changes/archive/。
-                                     更新 project.md。
+Step 9: /opsx:archive <name>      → Delta merge into openspec/specs/.
+                                    Change moved to openspec/changes/archive/.
+                                    project.md updated.
 
-Step 10: Done                     → 交付上线。
+Step 10: Done                     → Ship it.
 ```
 
 ## Tool Selection Matrix
@@ -205,8 +241,9 @@ These thoughts mean STOP — you're rationalizing skipping the SDD process:
 | "This is just a prototype" | Prototypes become production. Spec now saves pain later. |
 | "I'll just explore the codebase first" | Use `/opsx:explore` — structured, not aimless browsing. |
 | "I remember how this codebase works" | Code evolves. Your memory is stale. Read the specs. |
-| "Brainstorming done → writing-plans" | ⛔ WRONG. Brainstorming → `/opsx:propose` → review → THEN writing-plans. |
+| "Brainstorming says go to writing-plans" | ⛔ OVERRIDDEN. sdd-workflow pipeline: brainstorming → `/opsx:propose` → review → verify → THEN writing-plans. |
 | "I'll write the design doc — that's the spec" | `docs/superpowers/specs/` is transient. `/opsx:propose` creates permanent `openspec/changes/<name>/` artifacts. |
+| "The brainstorming design IS the OpenSpec design" | No. Brainstorming output is INPUT to `/opsx:propose`. It must be translated into the 4 OpenSpec artifacts. |
 
 **All of these mean: follow the SDD process. No shortcuts.**
 
@@ -216,7 +253,7 @@ When multiple tools could apply to a development task:
 
 1. **Classification first** — Use the decision tree. One-line fix? Bug? Behavior change?
 2. **Exploration before specification** — `/opsx:explore` to read code. `/opsx:propose` to generate artifacts. Never invert.
-3. **Review before execution** — Step 3-4 gate. Specs must be reviewed before any code.
+3. **Review before execution** — Steps 3-4 gate. Specs must be reviewed before any code.
 4. **Plan before implementing** — Step 5: `writing-plans` refines tasks.md. Save to `openspec/changes/<name>/plan.md`.
 5. **TDD during execution** — Step 6: `/opsx:apply` + `@test-driven-development`. RED → GREEN → REFACTOR.
 6. **Verify before claiming** — Step 8: `@verification-before-completion` with fresh evidence. Then Step 9: `/opsx:archive`.
@@ -231,7 +268,7 @@ When multiple tools could apply to a development task:
 - **`sdd-workflow`** (this skill) — Follow the routing exactly
 
 **Flexible** — Adapt principles to context:
-- `@brainstorming` — Socratic design, adapt depth to complexity
+- `@brainstorming` — Socratic design, adapt depth to complexity (but terminal routing is OVERRIDDEN by sdd-workflow)
 - `@writing-plans` — Task granularity scales with feature complexity
 - `/opsx:explore` — Depth of exploration matches uncertainty level
 
