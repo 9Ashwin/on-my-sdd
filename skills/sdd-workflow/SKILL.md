@@ -330,7 +330,7 @@ When multiple tools could apply to a development task:
 
 ## Related Skills
 
-- **sdd-review-specs** — Structured review of OpenSpec 4 artifacts before implementation
+- **sdd-review-specs** (included: `reference/sdd-review-specs.md`) — Structured review of OpenSpec 4 artifacts before implementation
 - **superpowers:brainstorming** — Socratic design for greenfield features
 - **superpowers:writing-plans** — Convert coarse tasks to 2-5min bite-sized units
 - **superpowers:test-driven-development** — RED-GREEN-REFACTOR cycle
