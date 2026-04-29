@@ -129,7 +129,7 @@ A task is **NOT "clearly bounded"** (and therefore MUST route through Step 0: ex
 | Has multiple valid interpretations with different architectures | "add collaboration" could mean real-time sync, async assignment, or shared views | `superpowers:brainstorming` |
 | Uses hedging or vague language | "somehow", "或者", "something like", "加点协作能力" | `superpowers:brainstorming` |
 | Requires comparing 2+ approaches with significant trade-offs | "should we use WebSocket or polling?" | `superpowers:brainstorming` |
-| You don't know which files would change without reading code first | Unfamiliar codebase or new feature area | `/opsx:explore` |
+| You don't know which files would change without reading code first | Unfamiliar codebase or new feature area | `/opsx:explore` → then re-run Boundedness Check → if still fuzzy → `superpowers:brainstorming` |
 
 A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true:
 - The data model is already defined (structs/tables exist)
@@ -140,6 +140,22 @@ A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true
 **Signal priority:** Brainstorming signals beat exploration signals. When a task matches BOTH a brainstorming signal AND the exploration signal, the flow is: `/opsx:explore` (read code, build context) → re-run Boundedness Check → `superpowers:brainstorming` (generate and compare approaches). Never skip the brainstorming step when ANY brainstorming signal is triggered.
 
 **Default rule: if you're not sure, it's not clearly bounded. Route to exploration or brainstorming.**
+
+### CRITICAL: After `/opsx:explore` — Do NOT present options
+
+`/opsx:explore` builds context. It does NOT authorize you to decide what to implement. After it completes:
+
+- **Do NOT** present a numbered list of features and ask the user to pick
+- **Do NOT** ask "你希望补充哪些功能？" or "Which features do you want?"
+- **Do NOT** merge exploration + decision into one step
+
+**You MUST instead:**
+1. Re-run the Boundedness Check against the task
+2. If ANY "not bounded" signal still applies → invoke `superpowers:brainstorming` to generate and compare approaches
+3. Only skip brainstorming if the exploration revealed exactly ONE obvious gap (e.g., "this CRUD API is missing a DELETE handler")
+
+**Wrong:** Explore → "Here are 4 options, pick one" → implement
+**Right:** Explore → Boundedness Check → Brainstorming → `/opsx:propose` → review → implement
 
 ```dot
 digraph sdd_routing {
