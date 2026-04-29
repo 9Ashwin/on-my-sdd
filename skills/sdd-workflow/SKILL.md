@@ -92,39 +92,15 @@ Nothing skipped. Every gate fires.
 
 Trigger: NOT clearly bounded, or > ~200 LOC, or architecture-level changes.
 
-## Artifact Ownership
-
-OpenSpec and Superpowers each produce plan-like files — they serve different roles and both belong in `openspec/changes/<name>/`:
-
-| Artifact | Owner | Granularity | Purpose | Example |
-|----------|-------|-------------|---------|---------|
-| `tasks.md` | OpenSpec (`/opsx:propose`) | Coarse checkbox items | WHAT to implement | `- [ ] Implement Store interface` |
-| `plan.md` | Superpowers (`writing-plans`) | 2-5min subtasks | HOW to implement | `1. Define Store interface in store/store.go (2 min)` |
-
-**Rule:** `plan.md` refines `tasks.md` — it does NOT replace it. Both coexist in the same change directory. `writing-plans` reads `tasks.md` as input and outputs `plan.md` with detailed steps, file paths, and test names.
-
 ```
-openspec/changes/<name>/
-├── proposal.md    ← OpenSpec: why + scope boundary
-├── specs/         ← OpenSpec: behavior delta specs
-├── design.md      ← OpenSpec: technical decisions
-├── tasks.md       ← OpenSpec: coarse implementation checklist (WHAT)
-└── plan.md        ← Superpowers: refined subtasks (HOW)
+Lite:      /opsx:propose → review (light) → /opsx:apply → /opsx:verify → /opsx:archive
+Standard:  /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → /opsx:archive
+Full:      brainstorming → /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → pre-completion verify → /opsx:archive
 ```
 
-`docs/superpowers/specs/` and `docs/superpowers/plans/` are legacy brainstorming output paths — they are NOT used by this workflow. All artifacts live under `openspec/changes/<name>/`.
+## Artifacts & Commands
 
-## OpenSpec Commands Used
-
-These 5 commands drive the SDD pipeline. The other opsx commands (`new`, `continue`, `ff`, `sync`, `bulk-archive`, `onboard`) are available but outside this skill's scope.
-
-| Command | Used in Tier | Purpose |
-|---------|-------------|---------|
-| `/opsx:propose` | Lite, Standard, Full | Generate 4 artifacts in one step |
-| `/opsx:explore` | Fuzzy → Full | Read code, build context before brainstorming |
-| `/opsx:apply` | Lite, Standard, Full | Implement tasks from tasks.md |
-| `/opsx:verify` | Standard, Full | 3-dimension validation before archive |
-| `/opsx:archive` | Lite, Standard, Full | Delta merge + move to archive/ |
+See `reference/sdd-artifacts.md` for artifact ownership (tasks.md vs plan.md, directory structure) and the 5 OpenSpec pipeline commands.
 
 ## Request Classification
 
@@ -177,22 +153,6 @@ The Boundedness Check result selects the pipeline tier. Size estimate after expl
 | New concepts, architecture changes, > 200 LOC, or fuzzy after explore | **Full** | None — every gate fires |
 
 **Heuristic:** if `tasks.md` would have ≤ 3 checkboxes, you don't need `writing-plans`. If `/opsx:verify` runs the same tests as pre-completion verify would, skip the duplicate.
-
-### CRITICAL: After `/opsx:explore` — Do NOT present options
-
-`/opsx:explore` builds context. It does NOT authorize you to decide what to implement. After it completes:
-
-- **Do NOT** present a numbered list of features and ask the user to pick
-- **Do NOT** ask "你希望补充哪些功能？" or "Which features do you want?"
-- **Do NOT** merge exploration + decision into one step
-
-**You MUST instead:**
-1. Re-run the Boundedness Check against the task
-2. If ANY "not bounded" signal still applies → invoke `superpowers:brainstorming` to generate and compare approaches
-3. Only skip brainstorming if the exploration revealed exactly ONE obvious gap (e.g., "this CRUD API is missing a DELETE handler")
-
-**Wrong:** Explore → "Here are 4 options, pick one" → implement
-**Right:** Explore → Boundedness Check → Brainstorming → `/opsx:propose` → review → implement
 
 ```dot
 digraph sdd_routing {
@@ -266,19 +226,6 @@ When brainstorming completes and the user approves the design:
 
 **Why:** Brainstorming produces an exploratory design (Phase 1 — Superpowers). OpenSpec locks it into auditable, mergeable artifacts (Phase 2 — OpenSpec). `docs/superpowers/specs/` is transient; `openspec/changes/<name>/` is permanent and traceable. Skipping Step 2 means specs can't be verified, archived, or traced.
 
-### Tier-Based Execution
-
-```
-Lite (≤ 5 steps):
-  /opsx:propose → review (light) → /opsx:apply → /opsx:verify → /opsx:archive
-
-Standard (≤ 7 steps):
-  /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → /opsx:archive
-
-Full (10 steps):
-  brainstorming → /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → pre-completion verify → /opsx:archive
-```
-
 ## Tool Selection Matrix
 
 When both OpenSpec and Superpowers offer a tool for the same phase:
@@ -309,13 +256,13 @@ These thoughts mean STOP — you're rationalizing skipping the SDD process:
 | "This is just a prototype" | Prototypes become production. Spec now saves pain later. |
 | "I'll just explore the codebase first" | Use `/opsx:explore` — structured, not aimless browsing. |
 | "I remember how this codebase works" | Code evolves. Your memory is stale. Read the specs. |
-| "This task is clearly bounded, skip brainstorming" | ⛔ STOP. Run the Boundedness Check. Does the task introduce concepts NOT in the current data model? Does it have multiple valid interpretations? If yes → brainstorming. "Add collaboration" on a single-user app is NOT clearly bounded. |
-| "I already explored the codebase, I can just list options" | ⛔ STOP. `/opsx:explore` answers "what exists," not "what to build." After explore, re-run Boundedness Check. If the task is still fuzzy → `superpowers:brainstorming`. Presenting a menu of options is NOT a substitute for Socratic design. |
-| "The user said '完善' or 'improve' — that's clear enough" | Vague verbs imply the user trusts you to figure out WHAT to improve. That's exactly what brainstorming is for. Explore the codebase → brainstorm what should change → THEN propose. |
+| "This task is clearly bounded, skip brainstorming" | ⛔ STOP. Run Boundedness Check. New concepts? Multiple interpretations? → brainstorming. |
+| "I already explored the codebase, I can just list options" | ⛔ STOP. Explore reads what exists. Brainstorming decides what to build. Presenting a menu ≠ design. |
+| "The user said '完善' or 'improve' — that's clear enough" | Vague verbs = user trusts you to figure out WHAT. That's brainstorming. Explore → brainstorm → propose. |
 | "Brainstorming says go to writing-plans" | ⛔ OVERRIDDEN. sdd-workflow pipeline: brainstorming → `/opsx:propose` → review → verify → THEN writing-plans. |
 | "I'll write the design doc — that's the spec" | `docs/superpowers/specs/` is transient. `/opsx:propose` creates permanent `openspec/changes/<name>/` artifacts. |
 | "The brainstorming design IS the OpenSpec design" | No. Brainstorming output is INPUT to `/opsx:propose`. It must be translated into the 4 OpenSpec artifacts. |
-| "This needs the full pipeline to be safe" | ⛔ STOP. Over-processing wastes time. A single-file CRUD endpoint is Lite, not Full. Use the Workflow Trimming table. Add steps only when you feel pain. |
+| "This needs the full pipeline to be safe" | ⛔ STOP. Over-processing wastes time. Match process to risk. Use Workflow Trimming. |
 
 **All of these mean: follow the SDD process. No shortcuts. But no detours either — match process to risk.**
 
