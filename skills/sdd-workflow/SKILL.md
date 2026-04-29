@@ -137,6 +137,8 @@ A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true
 - The request uses specific, concrete language ("add a DELETE endpoint", "add a `due_date` field to Task")
 - You can list the files that will change without reading any code
 
+**Signal priority:** Brainstorming signals beat exploration signals. When a task matches BOTH a brainstorming signal AND the exploration signal, the flow is: `/opsx:explore` (read code, build context) → re-run Boundedness Check → `superpowers:brainstorming` (generate and compare approaches). Never skip the brainstorming step when ANY brainstorming signal is triggered.
+
 **Default rule: if you're not sure, it's not clearly bounded. Route to exploration or brainstorming.**
 
 ```dot
@@ -185,6 +187,16 @@ Check the file system to determine where you are in the workflow:
 | All tasks checked, not archived | Ready for delivery | Steps 7-8: review → verify → Step 9: `/opsx:archive` |
 
 ## Transition Rules
+
+### Step 0: Explore → Brainstorming Gate
+
+When the Boundedness Check routes to `/opsx:explore` (because you don't know which files would change), `/opsx:explore` is read-only reconnaissance — it builds context, NOT decisions. After it completes:
+
+1. **Re-run the Boundedness Check.** The task is still "not clearly bounded" unless the codebase exploration revealed a single obvious gap.
+2. **If ANY "not bounded" signal still applies** → route to `superpowers:brainstorming`. Do NOT present options to the user. Do NOT ask the user what to implement. Brainstorming is where options are generated and compared.
+3. **If the task is now clearly bounded** (rare after a fuzzy request) → proceed to Step 2: `/opsx:propose`.
+
+**Why:** `/opsx:explore` answers "what exists." `superpowers:brainstorming` answers "what should we build." Mixing them (explore → offer choices → implement) skips design entirely. The DOT graph shows the loop: `explore → Boundedness Check` — this must execute, not be skipped.
 
 ### Step 0 → Step 2: The Critical Handoff
 
@@ -267,6 +279,8 @@ These thoughts mean STOP — you're rationalizing skipping the SDD process:
 | "I'll just explore the codebase first" | Use `/opsx:explore` — structured, not aimless browsing. |
 | "I remember how this codebase works" | Code evolves. Your memory is stale. Read the specs. |
 | "This task is clearly bounded, skip brainstorming" | ⛔ STOP. Run the Boundedness Check. Does the task introduce concepts NOT in the current data model? Does it have multiple valid interpretations? If yes → brainstorming. "Add collaboration" on a single-user app is NOT clearly bounded. |
+| "I already explored the codebase, I can just list options" | ⛔ STOP. `/opsx:explore` answers "what exists," not "what to build." After explore, re-run Boundedness Check. If the task is still fuzzy → `superpowers:brainstorming`. Presenting a menu of options is NOT a substitute for Socratic design. |
+| "The user said '完善' or 'improve' — that's clear enough" | Vague verbs imply the user trusts you to figure out WHAT to improve. That's exactly what brainstorming is for. Explore the codebase → brainstorm what should change → THEN propose. |
 | "Brainstorming says go to writing-plans" | ⛔ OVERRIDDEN. sdd-workflow pipeline: brainstorming → `/opsx:propose` → review → verify → THEN writing-plans. |
 | "I'll write the design doc — that's the spec" | `docs/superpowers/specs/` is transient. `/opsx:propose` creates permanent `openspec/changes/<name>/` artifacts. |
 | "The brainstorming design IS the OpenSpec design" | No. Brainstorming output is INPUT to `/opsx:propose`. It must be translated into the 4 OpenSpec artifacts. |
