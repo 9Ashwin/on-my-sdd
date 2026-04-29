@@ -67,7 +67,7 @@ Clear request ("add DELETE /tasks/{id}")
     → review → writing-plans → implement → archive
 ```
 
-中文文档：[README.zh-CN.md](README.zh-CN.md)
+中文文档：[README.zh-CN.md](README-CN.md)
 
 ## License
 
