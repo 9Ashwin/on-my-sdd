@@ -46,37 +46,51 @@ If the user says "skip the spec, just write code," follow the user's instruction
 
 **Announce at start:** "I'm using the sdd-workflow skill to route this development task."
 
-## The 10-Step Pipeline
+## Tiered Pipeline
 
-OpenSpec provides the specification skeleton (what). Superpowers enforces execution discipline (how). They connect in sequence with no overlap:
+**Add steps as you feel pain, not all at once.** The pipeline adapts to change size — a CRUD endpoint should not go through the same 10 steps as a new distributed protocol.
+
+Boundedness Check determines both routing AND how many steps follow. Three tiers:
+
+### Lite (≤ 5 steps)
+
+For well-bounded changes: single CRUD endpoint, one-field addition, simple bug fix with clear cause.
 
 ```
-0. [Optional] superpowers:brainstorming  — Exploratory design for greenfield/fuzzy requirements.
-                                           Output: design doc → feeds into Step 2.
-                                           ⛔ After approval → go to Step 2, NOT writing-plans.
-
-1. [User request]
-     ↓
-2. /opsx:propose <name>            — OpenSpec: Create proposal. Generate all 4 artifacts.
-     ↓                               proposal.md + specs/ + design.md + tasks.md
-3. [Manual review + iterate]       — OpenSpec: Refine specs. Review and revise each artifact.
-     ↓                               Optional: /opsx:continue (step-by-step), /opsx:ff (fast-forward).
-4. /opsx:verify                    — OpenSpec: Verify specs. 3-dimension validation gate.
-     ↓
-5. superpowers:writing-plans       — Superpowers: Generate implementation plan.
-     ↓                               Output: openspec/changes/<name>/plan.md
-6. /opsx:apply +                   — Superpowers: TDD execution. apply = scheduler, TDD = executor.
-   @test-driven-development          RED → GREEN → REFACTOR per task.
-     ↓
-7. @requesting-code-review         — Superpowers: Code review.
-     ↓
-8. @verification-before-           — Superpowers: Pre-completion verification. Fresh test evidence.
-   completion
-     ↓
-9. /opsx:archive <name>            — OpenSpec: Archive change. Delta merge + move to archive/.
-     ↓
-10. [Delivered]                    — Ship it.
+propose → review (light) → apply → verify → archive
 ```
+
+What's skipped and why:
+- **Brainstorming** — unnecessary; one obvious approach exists
+- **Writing-plans** — tasks.md is granular enough without 2-5min breakdown
+- **Code review** — change too small to justify independent review
+- **Pre-completion verify** — `/opsx:verify` covers it
+
+Trigger: clearly bounded AND single file AND no new types/structs AND < ~50 LOC.
+
+### Standard (≤ 7 steps)
+
+For clearly bounded but multi-file or new-type changes.
+
+```
+propose → review → verify → plan → apply → code-review → archive
+```
+
+What's skipped: brainstorming only. Everything else stays.
+
+Trigger: clearly bounded AND (multi-file OR new types) AND < ~200 LOC.
+
+### Full (10 steps)
+
+For anything that triggered the Boundedness Check "not bounded" signals — fuzzy requirements, new concepts, architecture decisions.
+
+```
+brainstorming → propose → review → verify → plan → apply + TDD → code-review → pre-completion verify → archive
+```
+
+Nothing skipped. Every gate fires.
+
+Trigger: NOT clearly bounded, or > ~200 LOC, or architecture-level changes.
 
 ## Artifact Ownership
 
@@ -141,6 +155,18 @@ A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true
 
 **Default rule: if you're not sure, it's not clearly bounded. Route to exploration or brainstorming.**
 
+### Workflow Trimming
+
+The Boundedness Check result selects the pipeline tier. Size estimate after exploration determines which steps to skip:
+
+| Change Profile | Tier | Steps Skipped |
+|---|---|---|
+| Single file, no new types, < 50 LOC | **Lite** | 0 (brainstorming), 5 (writing-plans), 7 (code-review), 8 (pre-completion verify) |
+| Multi-file or new types, < 200 LOC | **Standard** | 0 (brainstorming) |
+| New concepts, architecture changes, > 200 LOC, or fuzzy after explore | **Full** | None — every gate fires |
+
+**Heuristic:** if `tasks.md` would have ≤ 3 checkboxes, you don't need `writing-plans`. If `/opsx:verify` runs the same tests as pre-completion verify would, skip the duplicate.
+
 ### CRITICAL: After `/opsx:explore` — Do NOT present options
 
 `/opsx:explore` builds context. It does NOT authorize you to decide what to implement. After it completes:
@@ -171,7 +197,7 @@ digraph sdd_routing {
     "/opsx:propose\n(generate 4 artifacts)" [shape=box style=filled fillcolor="#ffffcc"];
     "/opsx:explore\n(build context first)" [shape=box style=filled fillcolor="#ffffcc"];
     "superpowers:brainstorming\n(Socratic design)" [shape=box style=filled fillcolor="#ffffcc"];
-    "Route to 10-Step\nPipeline Step 2" [shape=doublecircle];
+    "Apply Workflow Trimming.\nLite / Standard / Full?" [shape=doublecircle];
 
     "User request received" -> "Is it a one-line fix?\n(typo, log line, comment)";
     "Is it a one-line fix?\n(typo, log line, comment)" -> "Make change,\nverify directly" [label="yes"];
@@ -181,7 +207,7 @@ digraph sdd_routing {
     "Are there OpenSpec\nartifacts already?" -> "Read existing artifacts,\npick up where left off" [label="yes"];
     "Are there OpenSpec\nartifacts already?" -> "Run Boundedness Check.\nIs it clearly bounded?" [label="no"];
     "Run Boundedness Check.\nIs it clearly bounded?" -> "Unfamiliar codebase\nor uncertain approach?" [label="no — see\nBoundedness Check"];
-    "Run Boundedness Check.\nIs it clearly bounded?" -> "Route to 10-Step\nPipeline Step 2" [label="yes — meets ALL\nclear-boundary criteria"];
+    "Run Boundedness Check.\nIs it clearly bounded?" -> "Apply Workflow Trimming.\nLite / Standard / Full?" [label="yes — meets ALL\nclear-boundary criteria"];
     "Unfamiliar codebase\nor uncertain approach?" -> "/opsx:explore\n(build context first)" [label="need to read\ncode first"];
     "Unfamiliar codebase\nor uncertain approach?" -> "superpowers:brainstorming\n(Socratic design)" [label="greenfield\nor approach\ncomparison"];
     "/opsx:explore\n(build context first)" -> "Run Boundedness Check.\nIs it clearly bounded?";
@@ -196,11 +222,10 @@ Check the file system to determine where you are in the workflow:
 | What exists | Phase | Next action |
 |------------|-------|-------------|
 | No `openspec/` directory | Uninitialized | Run `openspec init` first |
-| `openspec/` exists, no change dir | Ready for proposal | Route to Step 2: `/opsx:propose <name>` or Step 0: exploration |
-| `openspec/changes/<name>/` with 4 artifacts, unreviewed | Specs need review | Steps 3-4: Manual review → `/opsx:verify` |
-| `openspec/changes/<name>/` with reviewed artifacts | Ready for execution | Step 5: `superpowers:writing-plans` |
-| `tasks.md` has unchecked items | In progress | Step 6: `/opsx:apply` + `@test-driven-development` |
-| All tasks checked, not archived | Ready for delivery | Steps 7-8: review → verify → Step 9: `/opsx:archive` |
+| `openspec/` exists, no change dir | Ready for proposal | Classify → trim → propose or explore |
+| `openspec/changes/<name>/` with unreviewed artifacts | Specs need review | Review (Lite/Full per tier) |
+| `tasks.md` has unchecked items | In progress | `/opsx:apply` (with or without TDD per tier) |
+| All tasks checked, not archived | Ready for delivery | Verify → archive |
 
 ## Transition Rules
 
@@ -230,38 +255,17 @@ When brainstorming completes and the user approves the design:
 
 **Why:** Brainstorming produces an exploratory design (Phase 1 — Superpowers). OpenSpec locks it into auditable, mergeable artifacts (Phase 2 — OpenSpec). `docs/superpowers/specs/` is transient; `openspec/changes/<name>/` is permanent and traceable. Skipping Step 2 means specs can't be verified, archived, or traced.
 
-### Steps 2-10: Linear Execution
+### Tier-Based Execution
 
 ```
-Step 2: /opsx:propose <name>     → If Step 0 was done, feed its output as context.
-                                    Confirm artifacts before Step 3.
+Lite (≤ 5 steps):
+  /opsx:propose → review (light) → /opsx:apply → /opsx:verify → /opsx:archive
 
-Step 3: Manual review + iterate   → Review proposal/specs/design/tasks item by item.
-                                    Optional: /opsx:continue (step) | /opsx:ff (fast-forward).
-                                    Standard: every in-scope item has a task checkbox.
+Standard (≤ 7 steps):
+  /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → /opsx:archive
 
-Step 4: /opsx:verify              → 3-dimension validation (complete/correct/consistent).
-                                    Pass before entering execution phase.
-
-Step 5: superpowers:writing-plans → MUST save to openspec/changes/<name>/plan.md
-                                    (NOT docs/superpowers/plans/).
-                                    Output: 2-5 minute granular subtasks.
-
-Step 6: /opsx:apply +             → apply = scheduler, TDD = executor.
-  @test-driven-development          RED → GREEN → REFACTOR per task.
-                                    On error: @systematic-debugging → return to apply.
-                                    All tasks complete → Step 7.
-
-Step 7: @requesting-code-review   → Dispatch code-reviewer. Fix Critical/Important issues.
-
-Step 8: @verification-before-     → Fresh go test ./... / pytest / etc.
-  completion                        Evidence required BEFORE claiming completion.
-
-Step 9: /opsx:archive <name>      → Delta merge into openspec/specs/.
-                                    Change moved to openspec/changes/archive/.
-                                    project.md updated.
-
-Step 10: Done                     → Ship it.
+Full (10 steps):
+  brainstorming → /opsx:propose → review → /opsx:verify → writing-plans → /opsx:apply + TDD → code-review → pre-completion verify → /opsx:archive
 ```
 
 ## Tool Selection Matrix
@@ -300,19 +304,17 @@ These thoughts mean STOP — you're rationalizing skipping the SDD process:
 | "Brainstorming says go to writing-plans" | ⛔ OVERRIDDEN. sdd-workflow pipeline: brainstorming → `/opsx:propose` → review → verify → THEN writing-plans. |
 | "I'll write the design doc — that's the spec" | `docs/superpowers/specs/` is transient. `/opsx:propose` creates permanent `openspec/changes/<name>/` artifacts. |
 | "The brainstorming design IS the OpenSpec design" | No. Brainstorming output is INPUT to `/opsx:propose`. It must be translated into the 4 OpenSpec artifacts. |
+| "This needs the full pipeline to be safe" | ⛔ STOP. Over-processing wastes time. A single-file CRUD endpoint is Lite, not Full. Use the Workflow Trimming table. Add steps only when you feel pain. |
 
-**All of these mean: follow the SDD process. No shortcuts.**
+**All of these mean: follow the SDD process. No shortcuts. But no detours either — match process to risk.**
 
 ## Skill Priority
 
-When multiple tools could apply to a development task:
-
-1. **Classification first** — Use the decision tree. One-line fix? Bug? Behavior change?
-2. **Exploration before specification** — `/opsx:explore` to read code. `/opsx:propose` to generate artifacts. Never invert.
-3. **Review before execution** — Steps 3-4 gate. Specs must be reviewed before any code.
-4. **Plan before implementing** — Step 5: `writing-plans` refines tasks.md. Save to `openspec/changes/<name>/plan.md`.
-5. **TDD during execution** — Step 6: `/opsx:apply` + `@test-driven-development`. RED → GREEN → REFACTOR.
-6. **Verify before claiming** — Step 8: `@verification-before-completion` with fresh evidence. Then Step 9: `/opsx:archive`.
+1. **Classification first** — Boundedness Check + Workflow Trimming. Assign Lite / Standard / Full.
+2. **Adapt depth to tier** — Lite skips 4 steps; Standard skips 1; Full skips none. Don't over-process small changes.
+3. **Explore before design** — If you don't know the codebase, read it before proposing. If still fuzzy, brainstorm.
+4. **Spec before code** — Always `/opsx:propose` before implementation. No code without a spec.
+5. **Add steps as you feel pain** — Don't add writing-plans until tasks.md feels too coarse. Don't add pre-completion verify until verify alone proves insufficient.
 
 ## Skill Types
 
