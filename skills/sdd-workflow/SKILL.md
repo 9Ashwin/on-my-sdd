@@ -119,6 +119,26 @@ openspec/changes/<name>/
 
 When the user brings a development request, classify FIRST. Then route.
 
+### Boundedness Check — BEFORE routing to Step 2
+
+A task is **NOT "clearly bounded"** (and therefore MUST route through Step 0: exploration or brainstorming) if ANY of these are true:
+
+| Signal | Example | Route to |
+|--------|---------|----------|
+| Introduces concepts NOT in the current data model | "add users", "add sharing", "add permissions" — and the codebase has no User/Share/Permission struct | `superpowers:brainstorming` |
+| Has multiple valid interpretations with different architectures | "add collaboration" could mean real-time sync, async assignment, or shared views | `superpowers:brainstorming` |
+| Uses hedging or vague language | "somehow", "或者", "something like", "加点协作能力" | `superpowers:brainstorming` |
+| Requires comparing 2+ approaches with significant trade-offs | "should we use WebSocket or polling?" | `superpowers:brainstorming` |
+| You don't know which files would change without reading code first | Unfamiliar codebase or new feature area | `/opsx:explore` |
+
+A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true:
+- The data model is already defined (structs/tables exist)
+- There is exactly one obvious implementation approach
+- The request uses specific, concrete language ("add a DELETE endpoint", "add a `due_date` field to Task")
+- You can list the files that will change without reading any code
+
+**Default rule: if you're not sure, it's not clearly bounded. Route to exploration or brainstorming.**
+
 ```dot
 digraph sdd_routing {
     "User request received" [shape=doublecircle];
@@ -128,7 +148,7 @@ digraph sdd_routing {
     "superpowers:systematic-debugging\n(root cause first)" [shape=box style=filled fillcolor="#ffcccc"];
     "Are there OpenSpec\nartifacts already?" [shape=diamond];
     "Read existing artifacts,\npick up where left off" [shape=box style=filled fillcolor="#ccccff"];
-    "Is the requirement\nclearly bounded?" [shape=diamond];
+    "Run Boundedness Check.\nIs it clearly bounded?" [shape=diamond];
     "Unfamiliar codebase\nor uncertain approach?" [shape=diamond];
     "/opsx:propose\n(generate 4 artifacts)" [shape=box style=filled fillcolor="#ffffcc"];
     "/opsx:explore\n(build context first)" [shape=box style=filled fillcolor="#ffffcc"];
@@ -141,13 +161,13 @@ digraph sdd_routing {
     "Is it a bug with\nunclear cause?" -> "superpowers:systematic-debugging\n(root cause first)" [label="yes"];
     "Is it a bug with\nunclear cause?" -> "Are there OpenSpec\nartifacts already?" [label="no"];
     "Are there OpenSpec\nartifacts already?" -> "Read existing artifacts,\npick up where left off" [label="yes"];
-    "Are there OpenSpec\nartifacts already?" -> "Is the requirement\nclearly bounded?" [label="no"];
-    "Is the requirement\nclearly bounded?" -> "Unfamiliar codebase\nor uncertain approach?" [label="yes, but\nneeds exploration"];
-    "Is the requirement\nclearly bounded?" -> "Route to 10-Step\nPipeline Step 2" [label="yes, clear\nboundaries"];
+    "Are there OpenSpec\nartifacts already?" -> "Run Boundedness Check.\nIs it clearly bounded?" [label="no"];
+    "Run Boundedness Check.\nIs it clearly bounded?" -> "Unfamiliar codebase\nor uncertain approach?" [label="no — see\nBoundedness Check"];
+    "Run Boundedness Check.\nIs it clearly bounded?" -> "Route to 10-Step\nPipeline Step 2" [label="yes — meets ALL\nclear-boundary criteria"];
     "Unfamiliar codebase\nor uncertain approach?" -> "/opsx:explore\n(build context first)" [label="need to read\ncode first"];
     "Unfamiliar codebase\nor uncertain approach?" -> "superpowers:brainstorming\n(Socratic design)" [label="greenfield\nor approach\ncomparison"];
-    "/opsx:explore\n(build context first)" -> "Is the requirement\nclearly bounded?";
-    "superpowers:brainstorming\n(Socratic design)" -> "Is the requirement\nclearly bounded?";
+    "/opsx:explore\n(build context first)" -> "Run Boundedness Check.\nIs it clearly bounded?";
+    "superpowers:brainstorming\n(Socratic design)" -> "Run Boundedness Check.\nIs it clearly bounded?";
 }
 ```
 
@@ -246,6 +266,7 @@ These thoughts mean STOP — you're rationalizing skipping the SDD process:
 | "This is just a prototype" | Prototypes become production. Spec now saves pain later. |
 | "I'll just explore the codebase first" | Use `/opsx:explore` — structured, not aimless browsing. |
 | "I remember how this codebase works" | Code evolves. Your memory is stale. Read the specs. |
+| "This task is clearly bounded, skip brainstorming" | ⛔ STOP. Run the Boundedness Check. Does the task introduce concepts NOT in the current data model? Does it have multiple valid interpretations? If yes → brainstorming. "Add collaboration" on a single-user app is NOT clearly bounded. |
 | "Brainstorming says go to writing-plans" | ⛔ OVERRIDDEN. sdd-workflow pipeline: brainstorming → `/opsx:propose` → review → verify → THEN writing-plans. |
 | "I'll write the design doc — that's the spec" | `docs/superpowers/specs/` is transient. `/opsx:propose` creates permanent `openspec/changes/<name>/` artifacts. |
 | "The brainstorming design IS the OpenSpec design" | No. Brainstorming output is INPUT to `/opsx:propose`. It must be translated into the 4 OpenSpec artifacts. |
