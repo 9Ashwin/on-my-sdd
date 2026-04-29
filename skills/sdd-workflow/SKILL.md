@@ -148,6 +148,20 @@ A task IS "clearly bounded" (can skip to Step 2) ONLY when ALL of these are true
 - The request uses specific, concrete language ("add a DELETE endpoint", "add a `due_date` field to Task")
 - You can list the files that will change without reading any code
 
+### Routing Quick Reference
+
+| User says (examples) | Boundedness | Route | Tier |
+|----------------------|-------------|-------|------|
+| "Fix typo in README" | N/A (one-line) | Direct fix | Tier 0 |
+| "Add DELETE /tasks/{id}" | Clearly bounded | `/opsx:propose` | Lite |
+| "Add a `due_date` field to Task" | Clearly bounded | `/opsx:propose` | Lite |
+| "Let users mark tasks as done" | Bounded, small feature | `/opsx:propose` | Standard |
+| "Add pagination to GET /tasks" | Bounded, multi-file | `/opsx:propose` | Standard |
+| "Improve the Go code" | Vague → not bounded | `/opsx:explore` → re-check | Full |
+| "Add collaboration between users" | New concepts → not bounded | `/opsx:explore` → `superpowers:brainstorming` | Full |
+| "Should we use Redis or Postgres for this?" | Approach comparison | `superpowers:brainstorming` | Full |
+| "The API is slow, fix it" | Bug, unclear cause | `@systematic-debugging` | — |
+
 **Signal priority:** Brainstorming signals beat exploration signals. When a task matches BOTH a brainstorming signal AND the exploration signal, the flow is: `/opsx:explore` (read code, build context) → re-run Boundedness Check → `superpowers:brainstorming` (generate and compare approaches). Never skip the brainstorming step when ANY brainstorming signal is triggered.
 
 **Default rule: if you're not sure, it's not clearly bounded. Route to exploration or brainstorming.**
